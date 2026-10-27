@@ -1,20 +1,42 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { AttendancePill, BarChart, Card, HBars, Kpi, LeadPill, PageHead, Pill } from "@/components/admin/ui";
+import {
+  AttendancePill,
+  BarChart,
+  Card,
+  Empty,
+  grid2,
+  grid21,
+  grid3,
+  HBars,
+  Kpi,
+  Kpis,
+  LeadPill,
+  link,
+  List,
+  Loading,
+  muted,
+  num,
+  PageHead,
+  Pill,
+  Row,
+  stack,
+} from "@/components/admin/ui";
 import { daysBetween, LEAD_SOURCES, LEAD_STATUSES, monthlyRevenue, PROJECT_STAGES, projects, staff, TODAY } from "@/lib/data";
 import { inr, inrShort, shortDate } from "@/lib/format";
 import { getLeads } from "@/lib/store";
+import { btn } from "@/lib/styles";
 
 export default function Dashboard() {
   return (
     <>
       <PageHead title="Namaste, Owner 👋" sub={`Business overview · ${shortDate(TODAY)} ${TODAY.slice(0, 4)}`}>
-        <Link href="/admin/leads" className="btn btn-sun">
+        <Link href="/admin/leads" className={btn("sun")}>
           + Add Lead
         </Link>
       </PageHead>
-      <Suspense fallback={<div className="loading">Loading dashboard…</div>}>
+      <Suspense fallback={<Loading>Loading dashboard…</Loading>}>
         <DashboardData />
       </Suspense>
     </>
@@ -57,7 +79,7 @@ async function DashboardData() {
 
   return (
     <>
-      <div className="kpis">
+      <Kpis>
         <Kpi label="Leads this month" value={String(monthLeads.length)} hint={`${leads.filter((l) => l.status === "New").length} new, uncontacted`} tone="info" />
         <Kpi label="Conversion (closed)" value={closed ? `${Math.round((won / closed) * 100)}%` : "—"} hint={`${won} won of ${closed} closed`} />
         <Kpi label="Revenue · Oct" value={inrShort(curr.revenue)} hint={`${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth)}% vs Sep`} tone={growth >= 0 ? "good" : "bad"} />
@@ -68,110 +90,80 @@ async function DashboardData() {
           hint={`${inrShort(subsidyPending.reduce((s, p) => s + p.subsidy + p.stateSubsidy, 0))} central + CG`}
           tone="warn"
         />
-      </div>
+      </Kpis>
 
-      <div className="grid-2-1">
-        <Card title="Monthly revenue" action={<span className="muted">Last 6 months</span>}>
+      <div className={grid21}>
+        <Card title="Monthly revenue" action={<span className={muted}>Last 6 months</span>}>
           <BarChart
             label="Monthly revenue, last 6 months"
             data={monthlyRevenue.map((m) => ({ label: m.month, value: m.revenue, tip: `${m.installs} installations` }))}
             format={inrShort}
           />
         </Card>
-        <Card title="Lead pipeline" action={<Link href="/admin/leads" className="link">All leads →</Link>}>
+        <Card title="Lead pipeline" action={<Link href="/admin/leads" className={link}>All leads →</Link>}>
           <HBars data={funnel} />
         </Card>
       </div>
 
-      <div className="grid-3">
+      <div className={grid3}>
         <Card title="Aaj ke follow-ups" action={<Pill tone={followUps.length ? "warn" : "good"}>{followUps.length} due</Pill>}>
-          <ul className="list">
+          <List>
             {followUps.slice(0, 6).map((l) => {
               const overdue = daysBetween(l.nextFollowUp!);
               return (
-                <li key={l.id}>
-                  <div>
-                    <b>{l.name}</b>
-                    <small>
-                      {l.phone} · {l.assignedTo}
-                    </small>
-                  </div>
-                  <div className="right">
-                    <LeadPill status={l.status} />
-                    <small className={overdue > 0 ? "t-bad" : ""}>{overdue > 0 ? `${overdue}d overdue` : "Today"}</small>
-                  </div>
-                </li>
+                <Row key={l.id} title={l.name} sub={`${l.phone} · ${l.assignedTo}`}>
+                  <LeadPill status={l.status} />
+                  <small className={overdue > 0 ? "text-bad" : "text-muted"}>{overdue > 0 ? `${overdue}d overdue` : "Today"}</small>
+                </Row>
               );
             })}
-            {!followUps.length && <li className="muted">Sab follow-ups ho gaye 🎉</li>}
-          </ul>
+            {!followUps.length && <Empty>Sab follow-ups ho gaye 🎉</Empty>}
+          </List>
         </Card>
 
-        <Card title="Projects atke hue (14+ din)" action={<Link href="/admin/projects" className="link">Tracker →</Link>}>
-          <ul className="list">
+        <Card title="Projects atke hue (14+ din)" action={<Link href="/admin/projects" className={link}>Tracker →</Link>}>
+          <List>
             {stuck.map((p) => (
-              <li key={p.id}>
-                <div>
-                  <b>{p.customer}</b>
-                  <small>
-                    {p.kw} kW · {PROJECT_STAGES[p.stage]}
-                  </small>
-                </div>
-                <div className="right">
-                  <Pill tone="bad">{daysBetween(p.stageSince)} days</Pill>
-                </div>
-              </li>
+              <Row key={p.id} title={p.customer} sub={`${p.kw} kW · ${PROJECT_STAGES[p.stage]}`}>
+                <Pill tone="bad">{daysBetween(p.stageSince)} days</Pill>
+              </Row>
             ))}
-            {!stuck.length && <li className="muted">Koi project atka nahi hai</li>}
-          </ul>
+            {!stuck.length && <Empty>Koi project atka nahi hai</Empty>}
+          </List>
         </Card>
 
-        <Card title="Staff today" action={<span className="muted">{present}/{staff.length} working</span>}>
-          <ul className="list">
+        <Card title="Staff today" action={<span className={muted}>{present}/{staff.length} working</span>}>
+          <List>
             {staff.map((s) => (
-              <li key={s.id}>
-                <div>
-                  <b>{s.name}</b>
-                  <small>{s.role}</small>
-                </div>
-                <div className="right">
-                  <AttendancePill value={s.attendance} />
-                </div>
-              </li>
+              <Row key={s.id} title={s.name} sub={s.role}>
+                <AttendancePill value={s.attendance} />
+              </Row>
             ))}
-          </ul>
+          </List>
         </Card>
       </div>
 
-      <div className="grid-2">
-        <div className="stack">
-          <Card title="Leads by zila" action={<span className="muted">Top 8 districts</span>}>
+      <div className={grid2}>
+        <div className={stack}>
+          <Card title="Leads by zila" action={<span className={muted}>Top 8 districts</span>}>
             <HBars data={districts} total={leads.length} />
           </Card>
-          <Card title="Lead sources" action={<span className="muted">Kahan se leads aa rahi hain</span>}>
+          <Card title="Lead sources" action={<span className={muted}>Kahan se leads aa rahi hain</span>}>
             <HBars data={sources} total={leads.length} />
           </Card>
         </div>
-        <Card title="Payment pending" action={<Link href="/admin/accounts" className="link">Accounts →</Link>}>
-          <ul className="list">
+        <Card title="Payment pending" action={<Link href="/admin/accounts" className={link}>Accounts →</Link>}>
+          <List>
             {projects
               .filter((p) => p.paid < p.value)
               .sort((a, b) => b.value - b.paid - (a.value - a.paid))
               .map((p) => (
-                <li key={p.id}>
-                  <div>
-                    <b>{p.customer}</b>
-                    <small>
-                      {p.id} · {PROJECT_STAGES[p.stage]}
-                    </small>
-                  </div>
-                  <div className="right">
-                    <b className="num">{inr(p.value - p.paid)}</b>
-                    <small>of {inrShort(p.value)}</small>
-                  </div>
-                </li>
+                <Row key={p.id} title={p.customer} sub={`${p.id} · ${PROJECT_STAGES[p.stage]}`}>
+                  <b className={num}>{inr(p.value - p.paid)}</b>
+                  <small className="text-muted">of {inrShort(p.value)}</small>
+                </Row>
               ))}
-          </ul>
+          </List>
         </Card>
       </div>
     </>

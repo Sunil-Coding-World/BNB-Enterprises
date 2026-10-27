@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import LeadsTable from "@/components/admin/LeadsTable";
-import { PageHead } from "@/components/admin/ui";
+import { Loading, PageHead } from "@/components/admin/ui";
 import { staff } from "@/lib/data";
 import { getLeads } from "@/lib/store";
 
@@ -11,7 +11,7 @@ export default function LeadsPage() {
   return (
     <>
       <PageHead title="Leads" sub="Website, Facebook, Google aur referral se aayi saari enquiries. Status badlo, follow-up karo." />
-      <Suspense fallback={<div className="loading">Loading leads…</div>}>
+      <Suspense fallback={<Loading>Loading leads…</Loading>}>
         <LeadsData />
       </Suspense>
     </>

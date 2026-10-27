@@ -1,6 +1,7 @@
-import { Card, HBars, Kpi, PageHead, Pill } from "@/components/admin/ui";
+import { Card, grid2, HBars, Kpi, Kpis, List, muted, num, PageHead, Pill, Row, stack, table, td, th } from "@/components/admin/ui";
 import { expenses, monthlyRevenue, projectProfit, projects } from "@/lib/data";
 import { inr, inrShort, shortDate } from "@/lib/format";
+import { btn, cx } from "@/lib/styles";
 
 export const metadata = { title: "Accounts" };
 
@@ -21,27 +22,27 @@ export default function AccountsPage() {
     <>
       <PageHead title="Accounts" sub="Order value, payment received, pending dues, kharcha aur har project ka profit." />
 
-      <div className="kpis">
+      <Kpis>
         <Kpi label="Order book" value={inrShort(totalValue)} hint={`${projects.length} projects`} />
         <Kpi label="Received" value={inrShort(received)} hint={`${Math.round((received / totalValue) * 100)}% collected`} tone="good" />
         <Kpi label="Pending dues" value={inrShort(totalValue - received)} tone="warn" hint="Customers se lena hai" />
         <Kpi label="Gross profit" value={inrShort(profit)} hint={`${Math.round((profit / totalValue) * 100)}% margin`} tone="good" />
         <Kpi label="Expenses · Oct" value={inrShort(expenseTotal)} hint={`${octExpenses.length} entries`} />
-      </div>
+      </Kpis>
 
       <Card title="Project-wise profit & payments">
-        <div className="table-wrap">
-          <table className="table">
+        <div className="overflow-x-auto">
+          <table className={table}>
             <thead>
               <tr>
-                <th>Project</th>
-                <th className="num">Order value</th>
-                <th className="num">Received</th>
-                <th className="num">Due</th>
-                <th className="num">Material</th>
-                <th className="num">Labour + Other</th>
-                <th className="num">Profit</th>
-                <th className="num">Margin</th>
+                <th className={th}>Project</th>
+                <th className={cx(th, num)}>Order value</th>
+                <th className={cx(th, num)}>Received</th>
+                <th className={cx(th, num)}>Due</th>
+                <th className={cx(th, num)}>Material</th>
+                <th className={cx(th, num)}>Labour + Other</th>
+                <th className={cx(th, num)}>Profit</th>
+                <th className={cx(th, num)}>Margin</th>
               </tr>
             </thead>
             <tbody>
@@ -50,21 +51,21 @@ export default function AccountsPage() {
                 const due = p.value - p.paid;
                 return (
                   <tr key={p.id}>
-                    <td>
+                    <td className={td}>
                       <b>{p.customer}</b>
                       <small>
                         {p.id} · {p.kw} kW {p.segment}
                       </small>
                     </td>
-                    <td className="num">{inr(p.value)}</td>
-                    <td className="num">{inr(p.paid)}</td>
-                    <td className="num">{due ? <Pill tone="warn">{inr(due)}</Pill> : <Pill tone="good">Paid</Pill>}</td>
-                    <td className="num">{inr(p.materialCost)}</td>
-                    <td className="num">{inr(p.labourCost + p.otherCost)}</td>
-                    <td className="num">
+                    <td className={cx(td, num)}>{inr(p.value)}</td>
+                    <td className={cx(td, num)}>{inr(p.paid)}</td>
+                    <td className={cx(td, num)}>{due ? <Pill tone="warn">{inr(due)}</Pill> : <Pill tone="good">Paid</Pill>}</td>
+                    <td className={cx(td, num)}>{inr(p.materialCost)}</td>
+                    <td className={cx(td, num)}>{inr(p.labourCost + p.otherCost)}</td>
+                    <td className={cx(td, num)}>
                       <b>{inr(pr)}</b>
                     </td>
-                    <td className="num">{Math.round((pr / p.value) * 100)}%</td>
+                    <td className={cx(td, num)}>{Math.round((pr / p.value) * 100)}%</td>
                   </tr>
                 );
               })}
@@ -73,44 +74,29 @@ export default function AccountsPage() {
         </div>
       </Card>
 
-      <div className="grid-2">
-        <Card title="Expenses · October" action={<button className="btn btn-plain small">+ Add expense</button>}>
-          <ul className="list">
+      <div className={grid2}>
+        <Card title="Expenses · October" action={<button className={btn("plain", "sm")}>+ Add expense</button>}>
+          <List>
             {expenses.map((e) => (
-              <li key={e.id}>
-                <div>
-                  <b>{e.note}</b>
-                  <small>
-                    {shortDate(e.date)} · {e.category}
-                    {e.project ? ` · ${e.project}` : ""}
-                  </small>
-                </div>
-                <div className="right">
-                  <b className="num">{inr(e.amount)}</b>
-                </div>
-              </li>
+              <Row key={e.id} title={e.note} sub={`${shortDate(e.date)} · ${e.category}${e.project ? ` · ${e.project}` : ""}`}>
+                <b className={num}>{inr(e.amount)}</b>
+              </Row>
             ))}
-          </ul>
+          </List>
         </Card>
-        <div className="stack">
+        <div className={stack}>
           <Card title="Kharcha by category">
             <HBars data={byCategory.map((c) => ({ label: c.label, value: Math.round(c.value / 1000) }))} />
-            <p className="muted small">Values in ₹ thousand</p>
+            <p className={cx(muted, "mt-2.5 text-[.8rem]")}>Values in ₹ thousand</p>
           </Card>
           <Card title="Monthly revenue">
-            <ul className="list">
+            <List>
               {monthlyRevenue.map((m) => (
-                <li key={m.month}>
-                  <div>
-                    <b>{m.month} 2026</b>
-                    <small>{m.installs} installations</small>
-                  </div>
-                  <div className="right">
-                    <b className="num">{inr(m.revenue)}</b>
-                  </div>
-                </li>
+                <Row key={m.month} title={`${m.month} 2026`} sub={`${m.installs} installations`}>
+                  <b className={num}>{inr(m.revenue)}</b>
+                </Row>
               ))}
-            </ul>
+            </List>
           </Card>
         </div>
       </div>

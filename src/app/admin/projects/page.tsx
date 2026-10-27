@@ -1,6 +1,9 @@
-import { Card, HBars, Kpi, PageHead, Pill } from "@/components/admin/ui";
+import * as motion from "motion/react-client";
+import { Card, grid21, HBars, Kpi, Kpis, PageHead, Pill, stack, toneText } from "@/components/admin/ui";
 import { daysBetween, PROJECT_STAGES, projects } from "@/lib/data";
 import { inr, inrShort, shortDate } from "@/lib/format";
+import { fadeUp, inView, stagger } from "@/lib/motion";
+import { cx } from "@/lib/styles";
 
 export const metadata = { title: "Projects & Subsidy" };
 
@@ -15,7 +18,7 @@ export default function ProjectsPage() {
     <>
       <PageHead title="Projects & Subsidy Tracker" sub="Booking se lekar PM Surya Ghar subsidy credit hone tak har project ka status." />
 
-      <div className="kpis">
+      <Kpis>
         <Kpi label="Active projects" value={String(active.length)} hint={`${projects.length - active.length} completed`} />
         <Kpi label="Capacity in pipeline" value={`${active.reduce((s, p) => s + p.kw, 0)} kW`} />
         <Kpi
@@ -30,61 +33,78 @@ export default function ProjectsPage() {
           hint="CSPDCL se follow-up karo"
           tone="bad"
         />
-      </div>
+      </Kpis>
 
-      <div className="grid-2-1">
+      <div className={grid21}>
         <Card title="All projects">
-          <div className="project-list">
+          <motion.div {...inView} variants={stagger(0.06)} className="grid gap-3">
             {projects.map((p) => {
               const days = daysBetween(p.stageSince);
               const done = p.stage === LAST;
               return (
-                <article key={p.id} className="project">
-                  <div className="project-top">
+                <motion.article
+                  key={p.id}
+                  variants={fadeUp}
+                  whileHover={{ y: -2 }}
+                  className="rounded-[14px] border border-line-soft px-4 py-3.5 transition-shadow hover:shadow-[0_10px_24px_-16px_rgba(11,26,46,.35)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <b>{p.customer}</b>
-                      <small>
+                      <small className="block text-[.8rem] text-muted">
                         {p.id} · {p.city} · {p.kw} kW {p.segment} · Installer: {p.installer}
                       </small>
                     </div>
-                    <div className="right">
-                      {done ? (
-                        <Pill tone="good">Completed</Pill>
-                      ) : (
-                        <Pill tone={days > 14 ? "bad" : "info"}>
-                          {PROJECT_STAGES[p.stage]} · {days}d
-                        </Pill>
-                      )}
-                    </div>
+                    {done ? (
+                      <Pill tone="good">Completed</Pill>
+                    ) : (
+                      <Pill tone={days > 14 ? "bad" : "info"}>
+                        {PROJECT_STAGES[p.stage]} · {days}d
+                      </Pill>
+                    )}
                   </div>
-                  <ol className="stages" aria-label={`Stage ${p.stage + 1} of ${PROJECT_STAGES.length}`}>
-                    {PROJECT_STAGES.map((s, i) => (
-                      <li key={s} className={i < p.stage || done ? "done" : i === p.stage ? "now" : ""} title={s}>
-                        <span>{s}</span>
-                      </li>
-                    ))}
+                  <ol className="mt-3.5 mb-2.5 grid grid-cols-8 gap-0.5" aria-label={`Stage ${p.stage + 1} of ${PROJECT_STAGES.length}`}>
+                    {PROJECT_STAGES.map((s, i) => {
+                      const state = i < p.stage || done ? "done" : i === p.stage ? "now" : "todo";
+                      return (
+                        <li key={s} title={s} className="relative h-2 bg-[#efe9db] first:rounded-l last:rounded-r">
+                          {state !== "todo" && (
+                            <motion.span
+                              initial={{ scaleX: 0 }}
+                              whileInView={{ scaleX: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.25, delay: 0.2 + i * 0.07 }}
+                              className={cx("absolute inset-0 origin-left rounded-[inherit]", state === "done" ? "bg-leaf-deep" : "bg-sun-deep")}
+                            />
+                          )}
+                          {state === "now" && (
+                            <span className="absolute top-3 left-0 text-[.68rem] font-semibold whitespace-nowrap text-warn">{s}</span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ol>
-                  <div className="project-meta">
+                  <div className="mt-[22px] flex flex-wrap gap-x-[18px] gap-y-1.5 text-[.82rem] text-muted">
                     <span>Value {inr(p.value)}</span>
                     <span>
                       {p.subsidy ? `Subsidy ${inr(p.subsidy)} central + ${inr(p.stateSubsidy)} CG` : "Subsidy N/A (commercial)"}
                     </span>
-                    <span className={p.paid < p.value ? "t-warn" : "t-good"}>
+                    <span className={p.paid < p.value ? toneText.warn : toneText.good}>
                       {p.paid < p.value ? `Due ${inr(p.value - p.paid)}` : "Fully paid"}
                     </span>
                     <span>Booked {shortDate(p.bookedOn)}</span>
                   </div>
-                </article>
+                </motion.article>
               );
             })}
-          </div>
+          </motion.div>
         </Card>
-        <div className="stack">
+        <div className={stack}>
           <Card title="Projects by stage">
             <HBars data={byStage} />
           </Card>
           <Card title="Subsidy process (PM Surya Ghar + CG)">
-            <ol className="howto">
+            <ol className="grid list-decimal gap-2 pl-5 text-[.88rem] marker:font-bold marker:text-leaf-deep">
               <li>Customer ka registration pmsuryaghar.gov.in par</li>
               <li>CSPDCL se technical feasibility approval</li>
               <li>Empanelled vendor installation karta hai</li>

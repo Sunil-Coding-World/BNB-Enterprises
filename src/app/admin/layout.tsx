@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/admin/Sidebar";
-import "./admin.css";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -9,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <div className="admin">
+    <div className="grid min-h-screen bg-admin text-[15px] md:grid-cols-[248px_1fr]">
       <Sidebar />
-      <main className="admin-main">{children}</main>
+      <main className="min-w-0 px-4 pt-5 pb-[50px] md:px-8 md:pt-7 md:pb-[60px]">{children}</main>
     </div>
   );
 }

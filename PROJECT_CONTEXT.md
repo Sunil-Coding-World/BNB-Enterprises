@@ -19,13 +19,15 @@ Paste this file into any AI tool or give it to a developer to continue the work.
 
 ## 2. Tech stack
 
-- **Next.js 16.4 (App Router, Turbopack), React 19, TypeScript**, no Tailwind (plain CSS).
+- **Next.js 16.4 (App Router, Turbopack), React 19, TypeScript.**
+- **Tailwind CSS v4** (`@tailwindcss/postcss`, no `tailwind.config`; theme lives in `@theme` in `globals.css`). All styling is utility classes in the markup; there are no per-page CSS files.
+- **Motion** (`motion` package, formerly Framer Motion) for animation. Client components import from `motion/react`; server components use `import * as motion from "motion/react-client"`. `MotionProvider` sets `reducedMotion="user"`.
 - `next.config.ts` has **`cacheComponents: true`** and `partialPrefetching: true`. Consequences:
   - Pages that read runtime-changing data must `await connection()` (from `next/server`) **inside a component wrapped in `<Suspense>`**. See `src/app/admin/page.tsx`.
   - Avoid `new Date()` / `Date.now()` in server components. Use the fixed `TODAY` constant from `src/lib/data.ts`.
   - `PageProps` / `LayoutProps` are global type helpers.
 - This Next version has breaking changes. Read `node_modules/next/dist/docs/` before using unfamiliar APIs (see `AGENTS.md`).
-- Fonts via `next/font/google`: **Bricolage Grotesque** (display, `--font-display`) and **Hind** (body, `--font-body`, includes Devanagari).
+- Fonts via `next/font/google`: **Bricolage Grotesque** (`--font-bricolage` → Tailwind `font-display`) and **Hind** (`--font-hind` → Tailwind `font-sans`, the body default, includes Devanagari).
 - **No database yet.** Dummy data lives in `src/lib/data.ts`. Leads use an in-memory store (`src/lib/store.ts`, on `globalThis`), which **resets on server restart**.
 - **No auth yet.** `/admin` is open to anyone with the link.
 
@@ -42,15 +44,13 @@ npm run build   # production build check
 ```
 src/
   app/
-    layout.tsx               root: fonts, metadata (SEO title mentions Raipur & Chhattisgarh)
-    globals.css              design tokens (:root vars), .btn, .eyebrow, .logo
+    layout.tsx               root: fonts, metadata (SEO title mentions Raipur & Chhattisgarh), MotionProvider
+    globals.css              Tailwind import, @theme tokens (colors, breakpoints, hero keyframes), @utility wrap / cell-grid / select-chevron
     (site)/                  PUBLIC WEBSITE (route group, URL "/")
-      layout.tsx             imports site.css
       page.tsx               landing page: all sections
-      site.css               landing styles + hero scene animations
     admin/                   ADMIN PANEL
-      layout.tsx             sidebar + main, imports admin.css, noindex
-      admin.css
+      layout.tsx             sidebar + main, noindex
+      template.tsx           page fade-in on every admin navigation
       page.tsx               Dashboard
       leads/page.tsx         Leads (server shell → LeadsTable client)
       projects/page.tsx      Projects & Subsidy tracker
@@ -59,15 +59,19 @@ src/
     api/leads/route.ts       POST create lead (validates name + 10-digit Indian mobile + city), PATCH status
   components/
     Logo.tsx                 SVG logo (sun + panel + leaf)
-    site/Header.tsx          sticky nav, mobile menu (client)
-    site/HeroScene.tsx       animated SVG: house with rooftop panels, rotating sun rays, energy flow, swaying trees, floating leaves
-    site/Calculator.tsx      savings calculator (client)
-    site/LeadForm.tsx        "Book Free Survey" form → POST /api/leads (client)
-    site/Effects.tsx         RevealOnScroll (adds .in to .fade), CountUp
-    admin/Sidebar.tsx        nav with active state (client)
-    admin/ui.tsx             Pill/LeadPill/AttendancePill, PageHead, Kpi, Card, BarChart (hover tooltip + table view), HBars
-    admin/LeadsTable.tsx     filters (status tabs, search, source, district, staff), inline status change, call/WhatsApp, "New lead" modal
+    MotionProvider.tsx       MotionConfig reducedMotion="user" (client)
+    site/Header.tsx          sticky nav, animated mobile menu (client)
+    site/HeroScene.tsx       animated SVG: house with rooftop panels, rotating sun rays, energy flow, trees that spring up and sway, floating leaves
+    site/Calculator.tsx      savings calculator with spring-animated numbers and sliding toggle (client)
+    site/LeadForm.tsx        "Book Free Survey" form → POST /api/leads, animated success/error (client)
+    site/Faq.tsx             animated accordion (client)
+    site/Effects.tsx         CountUp (on view), AnimatedNumber, ScrollProgress, Parallax
+    admin/Sidebar.tsx        nav with sliding active highlight, animated mobile dropdown (client)
+    admin/ui.tsx             Pill/LeadPill/AttendancePill, PageHead, Kpis/Kpi, Card, List/Row, BarChart, HBars, Meter, shared table/grid class strings
+    admin/LeadsTable.tsx     filters (status tabs, search, source, district, staff), inline status change, call/WhatsApp, "New lead" modal; rows animate on filter
   lib/
+    styles.ts                cx(), btn(variant, size), eyebrow class string
+    motion.ts                shared Motion variants: fadeUp, pop, stagger(), inView
     data.ts                  ALL dummy data + types + constants
     store.ts                 in-memory leads: getLeads, addLead (round-robin assigns sales execs), updateLeadStatus
     format.ts                inr(), inrShort() (₹23.1 L / ₹1.2 Cr), shortDate()
@@ -77,17 +81,18 @@ legacy/index.html            original single-file HTML version (reference only)
 ## 4. Design system (solar theme)
 
 - **Concept:** night-sky navy with a photovoltaic-cell grid pattern, sun amber accents, eco green.
-- **Tokens** (`globals.css`):
-  - `--night #0b1a2e`, `--cell-line #1f3d66`
-  - `--sun #ffb21a`, `--sun-deep #f07b0e`, `--sun-text #b45309` (amber that passes contrast on light backgrounds)
-  - `--leaf #2fbf71`, `--leaf-deep #16955a`
-  - `--paper #fbf8f1` (page background), `--ink #10202f`, `--muted #5b6b7a`, `--line #e6dfcf`
-  - Status: `--good`, `--warn`, `--bad`, `--info`, `--neutral`, each with a `-bg` variant
+- **Tokens** (`@theme` in `globals.css`, used as Tailwind colors like `bg-night`, `text-sun-text`, `border-line`):
+  - `night #0b1a2e`, `cell-line #1f3d66`
+  - `sun #ffb21a`, `sun-deep #f07b0e`, `sun-text #b45309` (amber that passes contrast on light backgrounds)
+  - `leaf #2fbf71`, `leaf-deep #16955a`
+  - `paper #fbf8f1` (page background), `ink #10202f`, `muted #5b6b7a`, `line #e6dfcf`
+  - Status: `good`, `warn`, `bad`, `info`, `neutral`, each with a `-bg` variant
 - **Rules:**
   - Status pills always show text plus color.
   - Charts are single-series. Bars have 4px rounded ends and a hover tooltip.
-  - Respect `prefers-reduced-motion`.
-  - Mobile-first breakpoints are 960px and 560px for the site, 1100px and 800px for admin.
+  - Respect `prefers-reduced-motion` (MotionConfig + a global CSS rule for the keyframe loops).
+  - Continuous loops (hero scene) are Tailwind `animate-*` utilities; entrances, scroll reveals, hover/tap and layout animations use Motion.
+  - Breakpoints are redefined: `sm` 560px, `lg` 960px (site); `md` 800px, `xl` 1100px (admin). Mobile-first.
 - **Landing sections, in order:** Header → Hero (headline "Bijli ka bill zero karo, sooraj se kamao", HeroScene, eco chip "140+ ped", subsidy card) → Savings Calculator → Services (Residential, Commercial, Hybrid/Off-grid, AMC) → Service Area (33 district chips) → How it works (5 steps) → Why Us → Request Demo / Free Survey form → FAQ → Footer → floating WhatsApp button.
 
 ## 5. Data model (`src/lib/data.ts`)
@@ -152,7 +157,7 @@ legacy/index.html            original single-file HTML version (reference only)
 
 ## 10. Conventions for whoever continues
 
-- Match the existing code style: TypeScript, function components, server components by default, `"use client"` only for interactive parts, plain CSS with the tokens above.
+- Match the existing code style: TypeScript, function components, server components by default, `"use client"` only for interactive parts, Tailwind utilities with the theme tokens above (reuse `btn()`, `cx()` and the admin `ui.tsx` helpers rather than repeating long class strings).
 - Keep customer copy in Hinglish. Keep admin labels short, in English or Hinglish.
 - Indian number formatting via `inr()` / `inrShort()`. Phone format: 10 digits starting with 6–9.
 - Don't add fake government affiliations or claims without the owner's confirmation.

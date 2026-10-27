@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Hind } from "next/font/google";
+import MotionProvider from "@/components/MotionProvider";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({
-  variable: "--font-display",
+  variable: "--font-bricolage",
   subsets: ["latin"],
   weight: ["400", "600", "800"],
 });
 
 const body = Hind({
-  variable: "--font-body",
+  variable: "--font-hind",
   subsets: ["latin", "devanagari"],
   weight: ["400", "500", "600"],
 });
@@ -26,7 +27,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="hi" className={`${display.variable} ${body.variable}`}>
-      <body>{children}</body>
+      <body>
+        <MotionProvider>{children}</MotionProvider>
+      </body>
     </html>
   );
 }
