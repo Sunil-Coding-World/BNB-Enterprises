@@ -39,11 +39,11 @@ export default function Header() {
         (scrolled || open) && "bg-night/92 shadow-[0_4px_20px_rgba(0,0,0,.2)] backdrop-blur-md",
       )}
     >
-      <div className="wrap flex h-[72px] items-center justify-between text-white">
+      <div className="wrap flex h-16 items-center justify-between text-white">
         <a href="#" aria-label="BNB Enterprises home">
-          <Logo />
+          <Logo size="md" />
         </a>
-        <ul className="hidden gap-7 font-medium lg:flex">
+        <ul className="hidden gap-6 text-[.92rem] font-medium lg:flex">
           {links.map((l) => (
             <li key={l.href}>
               <a href={l.href} className={linkClass}>
@@ -57,7 +57,7 @@ export default function Header() {
             </Link>
           </li>
         </ul>
-        <motion.a href="#demo" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} className={cx(btn("sun"), "hidden lg:inline-flex")}>
+        <motion.a href="#demo" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} className={cx(btn("sun", "sm"), "hidden lg:inline-flex")}>
           Free Site Survey
         </motion.a>
         <button className="text-[1.6rem] text-white lg:hidden" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
